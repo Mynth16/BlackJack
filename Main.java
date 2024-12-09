@@ -1,12 +1,3 @@
-/*
-TODO:
-- Move bank logic to Person
-- Move bet logic to Player
-- change game loop logic in Main
-- implement split
-- have 2 players
- */
-
 package BlackJack2;
 
 public class Main {

@@ -19,13 +19,6 @@ public class CardGenerator {
         };
     }
 
-    public void displayHand(ArrayList<String> cards) {
-        for (String card : cards) {
-                System.out.print(card + " ");
-        }
-        System.out.println();
-    }
-
     public int calculateTotalScore(ArrayList<String> hand) {
         int total = 0;
         int aceCount = 0;

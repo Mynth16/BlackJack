@@ -2,15 +2,19 @@ package BlackJack2;
 
 public class Dealer extends Person {
 
+    @Override
     public void drawTo17() {
-        for (getScore(); getScore() < 17; drawCard()) {
-            if (getScore() >= 17) {
-                return;
-            }
+        while (getScore(hand) < 17) {
+            drawCard(false);
         }
     }
     public void displayFirstCard() {
         System.out.println("Dealer's Hand: " + hand.getFirst() + " X");
         System.out.println(" ");
+    }
+
+    @Override
+    public int decideAction() {
+        return 0;
     }
 }

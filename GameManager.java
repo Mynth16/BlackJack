@@ -1,5 +1,6 @@
 package BlackJack2;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class GameManager {
@@ -13,6 +14,7 @@ public class GameManager {
     public void startGame() {
         boolean deciding = true;
         boolean doubled = false;
+        boolean canDouble = true;
 
         bet = 0;
         player.clearHand();
@@ -20,48 +22,60 @@ public class GameManager {
 
         bet = setBet();
 
-        player.drawCard();
-        player.drawCard();
-        dealer.drawCard();
-        dealer.drawCard();
+        player.drawCard(false);
+        player.drawCard(false);
+        dealer.drawCard(false);
+        dealer.drawCard(false);
 
         player.displayHand();
-        player.getScore();
-        player.displayScore();
+        player.displayScore(player.getHand());
         dealer.displayFirstCard();
-        dealer.getScore();
 
         if (checkForBlackJack()) {
             return;
         }
 
-        while (deciding && !player.isBusted()) {
+        while (deciding && !player.isBusted(player.getHand())) {
             int action = player.decideAction();
             switch (action) {
                 case 1:
-                    player.drawCard();
+                    canDouble = false;
+                    player.drawCard(false);
                     player.displayHand();
-                    player.displayScore();
+                    player.displayScore(player.getHand());
                     break;
                 case 2:
                     deciding = false;
                     break;
                 case 3:
+                    if (!canDouble) {
+                        System.out.println("You cannot double with more than 2 cards.");
+                        break;
+                    }
                     doubled = true;
-                    player.drawCard();
+                    player.drawCard(false);
                     player.displayHand();
-                    player.displayScore();
+                    player.displayScore(player.getHand());
                     deciding = false;
                     break;
                 case 4:
-                    System.out.println("Split not implemented yet.");
+                    if (player.canSplit()) {
+                        player.splitHand();
+                        playSplitHands(doubled);
+                        return;
+                    } else {
+                        System.out.println("You can only split with two cards of the same value.");
+                    }
                     break;
+                default:
+                    System.out.println("Invalid input.");
             }
         }
 
-        if (player.isBusted()) {
+        if (player.isBusted(player.getHand())) {
             System.out.println("Busted!");
-            bank -= bet * (doubled ? 2 : 1);
+            result = ResultStates.PLAYER_BUST;
+            calculateBankAmount(bet, result);
             return;
         }
 
@@ -69,15 +83,16 @@ public class GameManager {
         System.out.print("Dealer ");
         dealer.displayHand();
         System.out.print("Dealer ");
-        dealer.displayScore();
+        dealer.displayScore(dealer.getHand());
 
-        if (dealer.isBusted()) {
+        if (dealer.isBusted(dealer.getHand())) {
             System.out.println("Dealer Busted!");
-            bank += bet * (doubled ? 2 : 1);
+            result = ResultStates.DEALER_BUST;
+            calculateBankAmount(bet, result);
             return;
         }
 
-        getGameResult(bet, doubled);
+        getGameResult(bet, doubled, player.getHand());
         calculateBankAmount(bet, result);
     }
 
@@ -86,14 +101,14 @@ public class GameManager {
         if (player.hasBlackJack()) {
             System.out.println("Blackjack!");
             System.out.println("Winnings: " + bet * 1.5);
-            System.out.println(" ");
-            bank += bet * 1.5;
+            result = ResultStates.PLAYER_BLACKJACK;
+            calculateBankAmount(bet, result);
             return true;
         } else if (dealer.hasBlackJack()) {
             System.out.println("Dealer BlackJack!");
             System.out.println("Lost: " + bet);
-            System.out.println(" ");
-            bank -= bet;
+            result = ResultStates.DEALER_BLACKJACK;
+            calculateBankAmount(bet, result);
             return true;
         }
         return false;
@@ -108,7 +123,6 @@ public class GameManager {
 
             if (!scanner.hasNextDouble()) {
                 System.out.println("Invalid input. Please enter a valid number.");
-                System.out.println(" ");
                 scanner.nextLine();
                 continue;
             }
@@ -130,9 +144,87 @@ public class GameManager {
     }
 
 
-    private void getGameResult(double bet, boolean doubled) {
-        int playerScore = player.getScore();
-        int dealerScore = dealer.getScore();
+    private void playSplitHands(boolean doubled) {
+        double secondBet = bet;
+
+        player.displayHand();
+        System.out.println("\nPlaying Hand 1:");
+        playSingleHand(player.getHand(), doubled, false);
+
+        System.out.println("\nPlaying Hand 2:");
+        playSingleHand(player.getHand2(), doubled, true);
+
+        dealer.drawTo17();
+        System.out.print("Dealer ");
+        dealer.displayHand();
+        System.out.print("Dealer ");
+        dealer.displayScore(dealer.getHand());
+
+        if (dealer.isBusted(dealer.getHand())) {
+            System.out.println("Dealer Busted!");
+            result = doubled ? ResultStates.DOUBLE_DEALER_BUST : ResultStates.DEALER_BUST;
+            calculateBankAmount(bet, result);
+            result = doubled ? ResultStates.DOUBLE_DEALER_BUST : ResultStates.DEALER_BUST;
+            calculateBankAmount(secondBet, result);
+            return;
+        }
+
+        System.out.println("\nHand 1 result:");
+        getGameResult(bet, doubled, player.getHand());
+        calculateBankAmount(bet, result);
+
+        System.out.println("\nHand 2 result:");
+        getGameResult(secondBet, doubled, player.getHand2());
+        calculateBankAmount(secondBet, result);
+    }
+
+
+    private void playSingleHand(ArrayList<String> hand, boolean doubled, boolean isHand2) {
+        boolean deciding = true;
+        boolean canDouble = true;
+
+        while (deciding && !player.isBusted(hand)) {
+            int action = player.decideAction();
+            switch (action) {
+                case 1:
+                    canDouble = false;
+                    player.drawCard(isHand2);
+                    player.displayHand();
+                    player.displayScore(hand);
+                    break;
+                case 2:
+                    deciding = false;
+                    break;
+                case 3:
+                    if (!canDouble) {
+                        System.out.println("You cannot double with more than 2 cards.");
+                        break;
+                    }
+                    doubled = true;
+                    bet *= 2;
+                    player.drawCard(false);
+                    player.displayHand();
+                    player.displayScore(hand);
+                    deciding = false;
+                    break;
+                case 4:
+                    System.out.println("You cannot split again.");
+                    break;
+                default:
+                    System.out.println("Invalid action. Try again.");
+            }
+        }
+        if (player.isBusted(hand)) {
+            System.out.println("Busted!");
+            result = doubled ? ResultStates.DOUBLE_PLAYER_BUST : ResultStates.PLAYER_BUST;
+            player.removeHand(hand);
+        }
+    }
+
+
+    private void getGameResult(double bet, boolean doubled, ArrayList<String> hand) {
+        int playerScore = player.getScore(hand);
+        int dealerScore = dealer.getScore(dealer.getHand());
         double payout = doubled ? bet * 2 : bet;
 
         if (playerScore > dealerScore) {
@@ -152,11 +244,12 @@ public class GameManager {
 
     private static void calculateBankAmount(double bet, ResultStates result) {
         switch (result) {
-            case ResultStates.WIN -> bank += bet;
-            case ResultStates.DOUBLE_WIN -> bank += bet * 2;
+            case ResultStates.WIN, ResultStates.DEALER_BUST -> bank += bet;
+            case ResultStates.DOUBLE_WIN, ResultStates.DOUBLE_DEALER_BUST -> bank += bet * 2;
             case ResultStates.DRAW -> bank += 0;
-            case ResultStates.LOSE -> bank -= bet;
-            case ResultStates.DOUBLE_LOSE -> bank -= bet * 2;
+            case ResultStates.LOSE, ResultStates.PLAYER_BUST, ResultStates.DEALER_BLACKJACK -> bank -= bet;
+            case ResultStates.DOUBLE_LOSE, ResultStates.DOUBLE_PLAYER_BUST -> bank -= bet * 2;
+            case ResultStates.PLAYER_BLACKJACK -> bank += bet * 1.5;
             default -> System.out.println("Invalid result.");
         }
     }
