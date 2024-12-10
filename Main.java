@@ -6,6 +6,7 @@ public class Main {
         System.out.println("You can only cash out after winning $1000 or more");
         GameManager gameManager = new GameManager();
 
+        // game will keep looping until the player runs out of money or wins $1000
         while (GameManager.getBank() > 0 && GameManager.getBank() < 1000) {
             gameManager.startGame();
 

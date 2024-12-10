@@ -19,6 +19,7 @@ public class CardGenerator {
         };
     }
 
+    // Calculate the total score of a hand, works with multiple aces
     public int calculateTotalScore(ArrayList<String> hand) {
         int total = 0;
         int aceCount = 0;
@@ -30,7 +31,6 @@ public class CardGenerator {
                 aceCount++;
             }
         }
-
         while (total > 21 && aceCount > 0) {
             total -= 10;
             aceCount--;

@@ -15,6 +15,7 @@ public abstract class Person implements IPerson {
         return hand2;
     }
 
+    // accepts a boolean parameter isHand2, will add the card to the second hand if true, otherwise to the first hand
     public void drawCard(boolean isHand2) {
         String card = cardGenerator.getRandomCard();
         if (isHand2 && !hand2.isEmpty()) {
@@ -24,8 +25,9 @@ public abstract class Person implements IPerson {
         }
     }
 
+    // displays the hand of the person, including the second hand if it is not empty, for the dealer I just print dealer in front to differentiate
     public void displayHand() {
-        System.out.print("Player Hand: ");
+        System.out.print("Hand: ");
         for (String card : hand) {
             System.out.print(card + " ");
         }
@@ -62,6 +64,7 @@ public abstract class Person implements IPerson {
         hand2.clear();
     }
 
+    // if the hand has two cards with the same value, remove the second card from the first hand and add it to the second hand, then draw a new card for each hand
     public void splitHand() {
         if (hand.size() == 2 && cardGenerator.getCardValue(hand.get(0)) == cardGenerator.getCardValue(hand.get(1))) {
             hand2.clear();
@@ -74,6 +77,7 @@ public abstract class Person implements IPerson {
         }
     }
 
+    // idk why these are separated
     public boolean canSplit() {
         return hand.size() == 2 && cardGenerator.getCardValue(hand.get(0)) == cardGenerator.getCardValue(hand.get(1));
     }
@@ -82,6 +86,7 @@ public abstract class Person implements IPerson {
         specificHand.clear();
     }
 
+    // these methods are abstract because they are different for the player and the dealer, everything else is used by both
     public abstract int decideAction();
     public abstract void drawTo17();
 
