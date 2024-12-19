@@ -157,7 +157,7 @@ public class GameManager {
 
         if (dealer.isBusted(dealer.getHand())) {
             System.out.println("Dealer Busted!");
-            result = ResultStates.DEALER_BUST;
+            result = doubled ? ResultStates.DOUBLE_DEALER_BUST : ResultStates.DEALER_BUST;
             calculateBankAmount(bet, result);
             return;
         }
