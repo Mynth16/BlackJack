@@ -18,11 +18,8 @@ public abstract class Person implements IPerson {
     // accepts a boolean parameter isHand2, will add the card to the second hand if true, otherwise to the first hand
     public void drawCard(boolean isHand2) {
         String card = cardGenerator.getRandomCard();
-        if (isHand2 && !hand2.isEmpty()) {
-            hand2.add(card);
-        } else {
-            hand.add(card);
-        }
+        if (isHand2 && !hand2.isEmpty()) hand2.add(card);
+        else hand.add(card);
     }
 
     // displays the hand of the person, including the second hand if it is not empty, for the dealer I just print dealer in front to differentiate
@@ -72,9 +69,7 @@ public abstract class Person implements IPerson {
             hand.remove(1);
             hand.add(cardGenerator.getRandomCard());
             hand2.add(cardGenerator.getRandomCard());
-        } else {
-            System.out.println("You cannot split this hand.");
-        }
+        } else System.out.println("You cannot split this hand.");
     }
 
     // idk why these are separated
@@ -89,6 +84,4 @@ public abstract class Person implements IPerson {
     // these methods are abstract because they are different for the player and the dealer, everything else is used by both
     public abstract int decideAction();
     public abstract void drawTo17();
-
-
 }

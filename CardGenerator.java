@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class CardGenerator {
-    private static final String[] CARD_FACES = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
+    private static final String[] CARD_FACES = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A",};
     private static final Random random = new Random();
 
     public String getRandomCard() {
@@ -27,9 +27,7 @@ public class CardGenerator {
         for (String card : hand) {
             int cardValue = getCardValue(card);
             total += cardValue;
-            if (card.equals("A")) {
-                aceCount++;
-            }
+            if (card.equals("A")) aceCount++;
         }
         while (total > 21 && aceCount > 0) {
             total -= 10;

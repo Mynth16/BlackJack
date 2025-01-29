@@ -10,44 +10,11 @@ public class GameManager {
     private static final Scanner scanner = new Scanner(System.in);
     ResultStates result = ResultStates.DEFAULT;
     double bet = 0;
-
-    // all money calculations are done here, DO NOT implement bank logic anywhere else
-    private static void calculateBankAmount(double bet, ResultStates result) {
-        switch (result) {
-            case ResultStates.WIN, ResultStates.DEALER_BUST -> bank += bet;
-            case ResultStates.DOUBLE_WIN, ResultStates.DOUBLE_DEALER_BUST -> bank += bet * 2;
-            case ResultStates.DRAW -> bank += 0;
-            case ResultStates.LOSE, ResultStates.PLAYER_BUST, ResultStates.DEALER_BLACKJACK -> bank -= bet;
-            case ResultStates.DOUBLE_LOSE, ResultStates.DOUBLE_PLAYER_BUST -> bank -= bet * 2;
-            case ResultStates.PLAYER_BLACKJACK -> bank += bet * 1.5;
-            default -> System.out.println("Invalid result.");
-        }
-    }
-
-
-    private boolean checkForBlackJack() {
-        if (player.hasBlackJack()) {
-            System.out.println("Blackjack!");
-            System.out.println("Winnings: " + bet * 1.5);
-            result = ResultStates.PLAYER_BLACKJACK;
-            calculateBankAmount(bet, result);
-            return true;
-        } else if (dealer.hasBlackJack()) {
-            System.out.println("Dealer BlackJack!");
-            System.out.println("Lost: " + bet);
-            result = ResultStates.DEALER_BLACKJACK;
-            calculateBankAmount(bet, result);
-            return true;
-        }
-        return false;
-    }
-
-
+    boolean insured = false;
 
     private static double setBet() {
         while (true) {
-            System.out.println(" ");
-            System.out.println("Current Balance: " + bank);
+            System.out.println("\nCurrent Balance: " + bank);
             System.out.print("Enter bet amount (min 5, max 50): ");
 
             if (!scanner.hasNextDouble()) {
@@ -56,19 +23,32 @@ public class GameManager {
                 continue;
             }
             double bet = scanner.nextDouble();
-
             if (bet < 5 || bet > 50) {
-                System.out.println("Invalid bet amount. Please enter a bet between 5 and 50.");
-                System.out.println(" ");
+                System.out.println("Invalid bet amount. Please enter a bet between 5 and 50. \n");
                 continue;
             }
-
             if (bet > bank) {
-                System.out.println("Insufficient funds. Please enter a bet within your balance.");
-                System.out.println(" ");
+                System.out.println("Insufficient funds. Please enter a bet within your balance. \n");
                 continue;
             }
             return bet;
+        }
+    }
+
+    // all money calculations are done here, DO NOT implement bank logic anywhere else
+    private void calculateBankAmount(double bet, ResultStates result) {
+        if (insured) bank -= bet / 2;
+
+        switch (result) {
+            case ResultStates.WIN, ResultStates.DEALER_BUST -> bank += bet;
+            case ResultStates.DOUBLE_WIN, ResultStates.DOUBLE_DEALER_BUST -> bank += bet * 2;
+            case ResultStates.DRAW, PUSH -> bank += 0;
+            case ResultStates.LOSE, ResultStates.PLAYER_BUST, ResultStates.DEALER_BLACKJACK -> bank -= bet;
+            case ResultStates.DOUBLE_LOSE, ResultStates.DOUBLE_PLAYER_BUST -> bank -= bet * 2;
+            case ResultStates.PLAYER_BLACKJACK -> bank += bet * 1.5;
+            case ResultStates.DEALER_BLACKJACK_INSURED -> bank += bet / 2;
+            case ResultStates.DOUBLE_BLACKJACK_INSURED -> bank += (bet / 2) * 4;
+            default -> System.out.println("Invalid result.");
         }
     }
 
@@ -77,6 +57,7 @@ public class GameManager {
         boolean deciding = true;
         boolean doubled = false;
         boolean canDouble = true;
+        insured = false;
         bet = 0;
         player.clearHand();
         dealer.clearHand();
@@ -94,16 +75,20 @@ public class GameManager {
         player.displayScore(player.getHand());
         dealer.displayFirstCard();
 
-        // ends the game if either player has a blackjack
-        if (checkForBlackJack()) {
-            return;
+        // prompt for insurance if dealer first card is an ace
+        if (promptInsurance() && bank >= bet + (bet / 2)) {
+            if (player.hasInsurance()) {
+                System.out.println("Insurance paid: " + bet / 2 + "\n");
+                insured = true;
+            }
         }
+
+        // ends the game if either player has a blackjack
+        if (checkForBlackJack()) return;
 
         // Player's turn
         while (deciding && !player.isBusted(player.getHand())) {
-            if (bank < bet * 2) {
-                canDouble = false;
-            }
+            if (bank < bet * 2) canDouble = false;
             int action = player.decideAction();
             switch (action) {
                 case 1:
@@ -111,6 +96,7 @@ public class GameManager {
                     player.drawCard(false);
                     player.displayHand();
                     player.displayScore(player.getHand());
+                    if (player.getScore(player.getHand()) == 21) deciding = false;
                     break;
                 case 2:
                     deciding = false;
@@ -127,13 +113,15 @@ public class GameManager {
                     deciding = false;
                     break;
                 case 4:
+                    if ((bet * 2) > bank) {
+                        System.out.println("You do not have enough funds to split.");
+                        break;
+                    }
                     if (player.canSplit()) {
                         player.splitHand();
                         playSplitHands(doubled);
                         return;
-                    } else {
-                        System.out.println("You can only split with two cards of the same value.");
-                    }
+                    } else System.out.println("You can only split with two cards of the same value.");
                     break;
                 default:
                     System.out.println("Invalid input.");
@@ -167,7 +155,35 @@ public class GameManager {
         calculateBankAmount(bet, result);
     }
 
-    // idk why it doesn't work when i don't pass the boolean for doubled
+    private boolean promptInsurance() {
+        return dealer.hasAce();
+    }
+
+    private boolean checkForBlackJack() {
+        if (player.hasBlackJack() || dealer.hasBlackJack()) {
+            System.out.print("Dealer's ");
+            dealer.displayHand();
+
+            if (player.hasBlackJack() && dealer.hasBlackJack()) {
+                result = insured ? ResultStates.DOUBLE_BLACKJACK_INSURED : ResultStates.PUSH;
+                System.out.println("Push!");
+                if (insured) System.out.println("Winnings: " + (bet / 2) * 3);
+            } else if (player.hasBlackJack()) {
+                result = ResultStates.PLAYER_BLACKJACK;
+                System.out.println("Blackjack!\nWinnings: " + bet * 1.5);
+            } else {
+                result = insured ? ResultStates.DEALER_BLACKJACK_INSURED : ResultStates.DEALER_BLACKJACK;
+                System.out.println("Dealer BlackJack!");
+                if (!insured) System.out.println("Lost: " + bet);
+                if (insured) System.out.println("Insured!");
+            }
+            calculateBankAmount(bet, result);
+            return true;
+        }
+        return false;
+    }
+
+    // idk why it doesn't work when I don't pass the boolean for doubled
     private void playSplitHands(boolean doubled) {
         double secondBet = bet;
 
@@ -187,13 +203,9 @@ public class GameManager {
         if (dealer.isBusted(dealer.getHand())) {
             System.out.println("Dealer Busted!");
             result = doubled ? ResultStates.DOUBLE_DEALER_BUST : ResultStates.DEALER_BUST;
-            if (!player.getHand().isEmpty()) {
-                calculateBankAmount(bet, result);
-            }
+            if (!player.getHand().isEmpty()) calculateBankAmount(bet, result);
             result = doubled ? ResultStates.DOUBLE_DEALER_BUST : ResultStates.DEALER_BUST;
-            if (!player.getHand2().isEmpty()) {
-                calculateBankAmount(secondBet, result);
-            }
+            if (!player.getHand2().isEmpty()) calculateBankAmount(secondBet, result);
             return;
         }
 
@@ -213,9 +225,7 @@ public class GameManager {
         boolean canDouble = true;
 
         while (deciding && !player.isBusted(hand)) {
-            if (bank < bet * 2) {
-                canDouble = false;
-            }
+            if (bank < bet * 2) canDouble = false;
             int action = player.decideAction();
             switch (action) {
                 case 1:
@@ -273,6 +283,8 @@ public class GameManager {
             System.out.println("Lost: " + payout);
             result = doubled ? ResultStates.DOUBLE_LOSE : ResultStates.LOSE;
         }
+
+        if (insured) System.out.println("Insurance bet lost: " + bet / 2);
     }
 
     public static double getBank() {

@@ -15,13 +15,9 @@ public class Player extends Person {
                 if (input >= 1 && input <= 4) {
                     System.out.println(" ");
                     return input;
-                } else {
-                    System.out.println("Invalid input. Please enter a number between 1 and 4.");
-                    System.out.println(" ");
-                }
+                } else System.out.println("Invalid input. Please enter a number between 1 and 4. \n");
             } catch (InputMismatchException e) {
-                System.out.println("Invalid input. Please enter a number between 1 and 4.");
-                System.out.println(" ");
+                System.out.println("Invalid input. Please enter a number between 1 and 4. \n");
                 scanner.next();
             }
         }
@@ -29,5 +25,20 @@ public class Player extends Person {
 
     @Override
     public void drawTo17() {
+    }
+
+    public boolean hasInsurance() {
+        while (true) {
+            try {
+                System.out.print("Would you like to buy insurance?\n1. Yes   2. No\nEnter your choice: ");
+                int input = scanner.nextInt();
+                if (input == 1) return true;
+                else if (input == 2) return false;
+                else System.out.println("Invalid input. Please enter 1 or 2. \n");
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid input. Please enter 1 or 2. \n");
+                scanner.next();
+            }
+        }
     }
 }
