@@ -80,8 +80,4 @@ public abstract class Person implements IPerson {
     public void removeHand(ArrayList<String> specificHand) {
         specificHand.clear();
     }
-
-    // these methods are abstract because they are different for the player and the dealer, everything else is used by both
-    public abstract int decideAction();
-    public abstract void drawTo17();
 }
