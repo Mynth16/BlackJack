@@ -6,7 +6,6 @@ import java.util.Scanner;
 public class Player extends Person {
     private static final Scanner scanner = new Scanner(System.in);
 
-    @Override
     public int decideAction() {
         while (true) {
             try {
@@ -21,10 +20,6 @@ public class Player extends Person {
                 scanner.next();
             }
         }
-    }
-
-    @Override
-    public void drawTo17() {
     }
 
     public boolean hasInsurance() {
